@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import List, Optional, Union
-import uuid
 
 from lxml import etree
 import requests
@@ -14,10 +13,11 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from core import settings
-from models import PartnerEvent
-from models import SearchGetResponse
-from models import SearchGetResponse1, SearchGetResponse2, EventSummary
+from app.core import settings
+from app.core.storage import EventStorage
+from app.models import PartnerEvent
+from app.models import SearchGetResponse
+from app.models import SearchGetResponse1, SearchGetResponse2
 
 
 app = FastAPI(
@@ -32,7 +32,7 @@ app = FastAPI(
 )
 
 
-storage = {}
+storage = EventStorage()
 
 
 @app.exception_handler(RequestValidationError)
@@ -115,53 +115,10 @@ def fetch_events_from_partner_API(dt_from: datetime, dt_to: datetime):  # TODO: 
     # TODO: need to return anything if response code is not 200?
 
 
-def get_events_from_storage(dt_from: datetime, dt_to: datetime) -> List[EventSummary]:
-    # "start_date": str(event.start.date()),  # faster than .strftime
-    # "start_time": str(event.start.time()),
-    # "end_date": str(event.end.date()),
-    # "end_time": str(event.end.time()),
-    return [
-        {
-            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "title": "string",
-            "start_date": "2024-01-06",
-            "start_time": "22:38:19",
-            "end_date": "2024-01-06",
-            "end_time": "14:45:15",
-            "min_price": 0,
-            "max_price": 0
-        },
-    ]
-
-
-def set_event_in_storage(event: PartnerEvent):
-    """Updates event in storage. Creates new record if need."""
-    event_time = (event.start, event.end)
-    if event_time not in storage:
-        storage[event_time] = {}
-
-    event_key = event.base_event_id + "_" + event.id
-
-    events = storage[event_time]
-    if event_key not in events:
-        events[event_key] = {
-            "id": str(uuid.uuid4()),
-            "title": event.title,
-        }
-    events[event_key].update({
-        "start_date": str(event.start.date()),  # faster than .strftime
-        "start_time": str(event.start.time()),
-        "end_date": str(event.end.date()),
-        "end_time": str(event.end.time()),
-        "min_price": event.min_price,
-        "max_price": event.max_price,
-    })
-
-
 def handle_new_partner_events_request(starts_from: datetime, ends_to: datetime):  # TODO: async
     """Requests, parses and then stores partner event data."""
     response_content = fetch_events_from_partner_API(starts_from,  # TODO: await
-                                                           ends_to)
+                                                     ends_to)
 
     # Parse the XML response
     xml_tree = etree.fromstring(response_content)
@@ -185,7 +142,7 @@ def handle_new_partner_events_request(starts_from: datetime, ends_to: datetime):
     # then store events in the storage
     for event in partner_events_data:
         if event is not None:
-            set_event_in_storage(event)
+            storage.set_event(event)
 
     print(">>> storage content:")
     from pprint import pprint as pp
@@ -217,12 +174,12 @@ def search_events(
                 },
                 "data": None})
 
-    handle_new_partner_events_request(starts_at, ends_at)  # TODO: remove await before flight
+    handle_new_partner_events_request(starts_at, ends_at)
 
     # for sake of speed/availability, we can return to user immediately what
     # we have at this moment in the storage, so the updated data will be
     # available on the next user request.
-    events_list = get_events_from_storage(starts_at, ends_at)
+    events_list = storage.get_events(starts_at, ends_at)
     return {
         "data": {
             "events": events_list,
