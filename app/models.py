@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
-from datetime import date, time
+from datetime import datetime, date, time
 from typing import Any, Dict, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+
+class PartnerEvent(BaseModel):
+    id: str = Field(..., description="Event ID")
+    base_event_id: str = Field(..., description="Base event ID")
+    title: str = Field(..., description="Base event title")
+    start: datetime = Field(..., description="Event start date")
+    end: datetime = Field(..., description="Event end date")
+    min_price: float = Field(..., description="Event min price")
+    max_price: float = Field(..., description="Event max price")
 
 
 class EventSummary(BaseModel):
