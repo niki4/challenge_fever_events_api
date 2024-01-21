@@ -8,7 +8,7 @@ from typing import Optional, Union
 from lxml import etree
 import requests
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -39,7 +39,7 @@ storage = EventStorage()
 async def validation_exception_handler(
         request: Request, exc: RequestValidationError) -> SearchGetResponse1:
     """Overrides default request params validator and returns
-    validation error in custom JSON format."""
+    request validation error in custom JSON format."""
 
     details = exc.errors()
     error_msg = ""
@@ -49,6 +49,18 @@ async def validation_exception_handler(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=jsonable_encoder({
             "error": {"code": "400", "message": error_msg or details},
+            "data": None}))
+
+
+@app.exception_handler(500)
+async def generic_exception_handler(
+        request: Request, exc: Exception) -> SearchGetResponse2:
+    """Overrides default generic handler for Server Errors and returns
+    request validation error in custom JSON format."""
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=jsonable_encoder({
+            "error": {"code": "500", "message": repr(exc)},
             "data": None}))
 
 
