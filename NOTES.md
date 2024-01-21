@@ -1,3 +1,10 @@
+## Setup & run
+
+`make install` - one off command to install the app env and dependencies.
+`make run` - run the app (debug logging off).
+`make debug` - run the app with debug logging on.
+`make clean` - removes all the temporary files, virtual env, etc.
+
 ## Tech stack
 
 Because of the requirement to have the service as resource and time efficient as possible, I chose following tech stack (note that everything below comes with FastAPI installation):
