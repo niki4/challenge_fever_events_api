@@ -52,20 +52,22 @@ Simple in-memory dict storage, could be upgraded later without change in structu
 
 ```python
 {
-    # event.start and event.end datetime objects. Used for effective dates filtering.
-    (datetime.datetime, datetime.datetime): {
-      # Base Event + Original event ID from partner API. To identify partner Event.
-      "1591_1642": {
-        # UUID for response instead original event ID, automatically generated on first insert to storage.
-        "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "title": "Los Morancos",
-        "start_date": "2021-07-31",
-        "start_time": "20:00:00",
-        "end_date": "2021-07-31",
-        "end_time": "21:00:00",
-        "min_price": 65.00,
-        "max_price": 75.00,
-      },
+    # Event key: Base Event + Original event ID from partner API.
+    # To identify partner Event.
+    (1591, 1642): {
+      # UUID for response instead original event ID,
+      # automatically generated on first insert to storage.
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "title": "Los Morancos",
+      "start_date": "2021-07-31",
+      "start_time": "20:00:00",
+      "end_date": "2021-07-31",
+      "end_time": "21:00:00",
+      "min_price": 65.00,
+      "max_price": 75.00,
+      # event.start and event.end datetime objects. For filtering.
+      "start": datetime.datetime object,
+      "end": datetime.datetime object,
     },
 }
 ```
