@@ -8,5 +8,9 @@ run:
 	export PYTHONPATH=${PWD} && \
 	uvicorn app.main:app --reload
 
+debug:
+	export DEBUG=True && \
+	$(MAKE) run
+
 clean-all:
 	rm -rf .venv

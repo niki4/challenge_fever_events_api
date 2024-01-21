@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from app.core import parsers
 from app.core import settings
+from app.core.logger import logger
 from app.core.storage import EventStorage
 from app.models import SearchGetResponse
 from app.models import SearchGetResponse1, SearchGetResponse2
@@ -64,24 +65,21 @@ async def generic_exception_handler(
             "data": None}))
 
 
-def fetch_events_from_partner_API(dt_from: datetime, dt_to: datetime):  # TODO: async
-    # request from event partner API
+def fetch_events_from_partner_api(dt_from: datetime, dt_to: datetime):  # TODO: async
+    """Makes request to event partner API."""
     response = requests.get(settings.EVENT_PROVIDER_URL,
                             timeout=settings.DEFAULT_REQUEST_TIMEOUT)
 
-    date_from = dt_from.date()
-    date_to = dt_to.date()
-
-    print("date_from:", date_from, "date_to:", date_to, end="\n----\n")
-
     if response.status_code == 200:
         return response.content
-    # TODO: need to return anything if response code is not 200?
+
+    logger.info("Request to %s return response with status code %s",
+                settings.EVENT_PROVIDER_URL, response.status_code)
 
 
 def handle_new_partner_events_request(starts_from: datetime, ends_to: datetime):  # TODO: async
-    """Requests, parses and then stores partner event data."""
-    response_content = fetch_events_from_partner_API(starts_from,  # TODO: await
+    """Handles request, parse and then store partner event data."""
+    response_content = fetch_events_from_partner_api(starts_from,  # TODO: await
                                                      ends_to)
 
     # Parse the XML response
@@ -90,27 +88,21 @@ def handle_new_partner_events_request(starts_from: datetime, ends_to: datetime):
 
     # Access specific elements and data
     partner_events_data = parsers.parse_events_data_from_xml(root)
-    print(">> before filter:", partner_events_data)
+    logger.debug("partner_events_data from xml: %s", partner_events_data)
 
     # Filter partner data so that we will store only events between user
     # specified start and end datetime.
     for idx, event in enumerate(partner_events_data):
-        print("starts_from:", starts_from, "event.start:", event.start,
-              "---", "event.end:", event.end, "ends_to:", ends_to, "\n")
-
         if not (starts_from <= event.start and event.end <= ends_to):
             partner_events_data[idx] = None  # avoid expensive shift of element
 
-    print(">> after filter:", partner_events_data)
+    logger.debug("partner_events_data after filter: %s", partner_events_data)
 
     # then store events in the storage
     for event in partner_events_data:
         if event is not None:
             storage.set_event(event)
-
-    print(">>> storage content:")
-    from pprint import pprint as pp
-    pp(storage)
+    logger.info("New events saved in storage.")
 
 
 @app.get(
@@ -125,7 +117,7 @@ def search_events(
     starts_at: Optional[datetime] = None, ends_at: Optional[datetime] = None,
 ) -> Union[SearchGetResponse, SearchGetResponse1, SearchGetResponse2]:
     """
-    Lists the available events on a time range
+    Lists the available events on a specified time range.
     """
     if not starts_at or not ends_at:
         return JSONResponse(

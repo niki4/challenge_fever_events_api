@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+
 from typing import List
 import uuid
 
+from app.core.logger import logger
 from app.models import EventSummary
 from app.models import PartnerEvent
 
@@ -27,7 +29,8 @@ class EventStorage:
                 result.append({
                     k: v for (k, v) in event.items() if k not in ["start, end"]
                     })
-        print("EventStorage - get_events - result:", result)
+
+        logger.debug("EventStorage - get_events - result: %s", result)
         return result
 
     def set_event(self, event: PartnerEvent):
