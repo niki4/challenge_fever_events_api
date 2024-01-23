@@ -12,5 +12,9 @@ debug:
 	export DEBUG=True && \
 	$(MAKE) run
 
+test:
+	. .venv/bin/activate && \
+	pytest . -v
+
 clean-all:
 	rm -rf .venv
