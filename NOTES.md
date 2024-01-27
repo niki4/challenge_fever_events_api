@@ -55,6 +55,7 @@ This structure is provided as is by "[partner API](https://provider.code-challen
 ```
 
 ##### DB
+
 Simple in-memory dict storage, could be upgraded later without change in structure, e.g. to use Redis, MongoDB or other solution.
 
 ```python
@@ -99,3 +100,23 @@ This structure comes from app OpenAPI [spec](https://app.swaggerhub.com/apis-doc
   "error": null
 }
 ```
+
+## Performance
+
+It's worth to note that this is a prototype app and real production environment may include many additional things like caches, load balancers, service discovery, API gateways, etc.
+
+Neverthless, some design decisions allowed to reach good response time while decouple user request/response from other (Partner) API availability.
+
+* First, for prototype I used very simple in-memory storage that holds previously fetched events data.
+* Then, for Partner API calls I used async/await pattern so that server do not blocks here and may switch to other requests/tasks while waiting response.
+* Finally, `handle_new_partner_events_request` (which requests partner event data from external API, parses XML and then stores result data) processed asynchronously in background task, allowing us return response to user with very low latency, however, by cost of eventual consistency (the updated data will be available on the next user request).
+
+Request response time metrics I have on my environment (call to `/search` handler):
+
+    With background tasks (current design):
+    Function run in (ms):  0.241        first request (after app started)
+    Function run in (ms):  0.145        mean on subsequent requests
+
+    Without background tasks (but with await on i/o operations like network requests):
+    Function run in (ms):  271.899        first request (after app started)
+    Function run in (ms):  236.283        mean on subsequent requests
