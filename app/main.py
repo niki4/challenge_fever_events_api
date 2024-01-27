@@ -8,7 +8,7 @@ from typing import Optional, Union
 import httpx
 from lxml import etree
 
-from fastapi import FastAPI, Request, status
+from fastapi import BackgroundTasks, FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -127,10 +127,10 @@ async def handle_new_partner_events_request(
     },
 )
 async def search_events(
-    starts_at: Optional[datetime] = None, ends_at: Optional[datetime] = None,
+    starts_at: Optional[datetime], ends_at: Optional[datetime],
+    background_tasks: BackgroundTasks,
 ) -> Union[SearchGetResponse, SearchGetResponse1, SearchGetResponse2]:
     """Lists the available events on a specified time range."""
-
     if not starts_at or not ends_at:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -142,13 +142,14 @@ async def search_events(
                 },
                 "data": None})
 
-    # TODO:
     # For sake of speed/availability, we will return to user immediately what
-    # we have at this moment in the storage, while the latest data update
-    # processed in handle_new_partner_events_request() in background task,
+    # we have at this moment in the storage, while the latest data update will
+    # be processed in a handle_new_partner_events_request() in background task,
     # so the updated data will be available on the next user request.
+    # More info: https://fastapi.tiangolo.com/tutorial/background-tasks/
 
-    await handle_new_partner_events_request(starts_at, ends_at)
+    background_tasks.add_task(handle_new_partner_events_request,
+                              starts_at, ends_at)
 
     events_list = storage.get_events(starts_at, ends_at)
     return {
