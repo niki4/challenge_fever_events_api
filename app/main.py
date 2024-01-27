@@ -58,7 +58,7 @@ async def generic_exception_handler(
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=jsonable_encoder({
-            "error": {"code": "500", "message": repr(exc)},
+            "error": {"code": "500", "message": str(exc)},
             "data": None}))
 
 
@@ -127,8 +127,8 @@ async def handle_new_partner_events_request(
     },
 )
 async def search_events(
-    starts_at: Optional[datetime], ends_at: Optional[datetime],
-    background_tasks: BackgroundTasks,
+    starts_at: Optional[datetime] = None, ends_at: Optional[datetime] = None,
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ) -> Union[SearchGetResponse, SearchGetResponse1, SearchGetResponse2]:
     """Lists the available events on a specified time range."""
     if not starts_at or not ends_at:
@@ -137,10 +137,14 @@ async def search_events(
             content={
                 "error": {
                     "code": "400",
-                    "message": ("Missed required query params"
+                    "message": ("missed required query params "
                                 "starts_at or ends_at."),
                 },
                 "data": None})
+
+    # Verifying in this way we may catch by exception_handler's
+    # both non-comparable datetimes and when starts_at later than ends_at.
+    assert starts_at <= ends_at, "starts_at datetime later than ends_at"
 
     # For sake of speed/availability, we will return to user immediately what
     # we have at this moment in the storage, while the latest data update will
