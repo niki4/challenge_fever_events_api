@@ -12,7 +12,7 @@ Because of the requirement to have the service as resource and time efficient as
 * [FastAPI](https://fastapi.tiangolo.com/) - is a modern, fast (high-performance), web framework for building APIs with Python 3.8+ based on standard Python type hints. [One of the fastest Python frameworks](https://fastapi.tiangolo.com/benchmarks/) available.
 * [Uvicorn](https://www.uvicorn.org/) - is an ASGI web server implementation for Python. Supports async concurrency operations, so it significantly improves speed on returning response back to client.
 * [Pydantic](https://docs.pydantic.dev/latest/) - performs data validation over defined models
-* <s>HTTPX - asyncronous http requests library</s>  # TODO migrate from [requests](https://pypi.org/project/requests/)
+* [HTTPX](https://www.python-httpx.org/quickstart/) - asyncronous http requests library
 * [lxml](https://lxml.de/) - fast and effective parsing of xml documents
 
 

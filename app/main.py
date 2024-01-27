@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional, Union
 
+import httpx
 from lxml import etree
-import requests
 
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from app.core import parsers
 from app.core import settings
 from app.core.logger import logger
-from app.core.storage import EventStorage
+from app.core.storage import storage
 from app.models import SearchGetResponse
 from app.models import SearchGetResponse1, SearchGetResponse2
 
@@ -31,9 +31,6 @@ app = FastAPI(
         }
     ],
 )
-
-
-storage = EventStorage()
 
 
 @app.exception_handler(RequestValidationError)
@@ -53,7 +50,7 @@ async def validation_exception_handler(
             "data": None}))
 
 
-@app.exception_handler(500)
+@app.exception_handler(Exception)
 async def generic_exception_handler(
         request: Request, exc: Exception) -> SearchGetResponse2:
     """Overrides default generic handler for Server Errors and returns
@@ -65,22 +62,38 @@ async def generic_exception_handler(
             "data": None}))
 
 
-def fetch_events_from_partner_api(dt_from: datetime, dt_to: datetime):  # TODO: async
-    """Makes request to event partner API."""
-    response = requests.get(settings.EVENT_PROVIDER_URL,
-                            timeout=settings.DEFAULT_REQUEST_TIMEOUT)
+async def fetch_events_from_partner_api():
+    """Makes request to event partner API.
 
-    if response.status_code == 200:
+    async/await allows not to block server on waiting response and it can go
+    and do something else in the meanwhile (like receiving another request).
+    More info: https://fastapi.tiangolo.com/async/#async-and-await
+    """
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(settings.EVENT_PROVIDER_URL,
+                                        timeout=settings.REQUEST_TIMEOUT_SEC)
+            response.raise_for_status()
+        except httpx.RequestError as exc:
+            logger.error("An error occurred while requesting %s",
+                         exc.request.url)
+            return
+        except httpx.HTTPStatusError as exc:
+            logger.error("Error response %s while requesting %s",
+                         exc.response.status_code, exc.request.url)
+            return
+
         return response.content
 
-    logger.info("Request to %s return response with status code %s",
-                settings.EVENT_PROVIDER_URL, response.status_code)
 
-
-def handle_new_partner_events_request(starts_from: datetime, ends_to: datetime):  # TODO: async
+async def handle_new_partner_events_request(
+        starts_from: datetime, ends_to: datetime):
     """Handles request, parse and then store partner event data."""
-    response_content = fetch_events_from_partner_api(starts_from,  # TODO: await
-                                                     ends_to)
+
+    response_content = await fetch_events_from_partner_api()
+    if response_content is None:
+        return
 
     # Parse the XML response
     xml_tree = etree.fromstring(response_content)
@@ -113,12 +126,11 @@ def handle_new_partner_events_request(starts_from: datetime, ends_to: datetime):
         '500': {'model': SearchGetResponse2},
     },
 )
-def search_events(
+async def search_events(
     starts_at: Optional[datetime] = None, ends_at: Optional[datetime] = None,
 ) -> Union[SearchGetResponse, SearchGetResponse1, SearchGetResponse2]:
-    """
-    Lists the available events on a specified time range.
-    """
+    """Lists the available events on a specified time range."""
+
     if not starts_at or not ends_at:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -130,11 +142,14 @@ def search_events(
                 },
                 "data": None})
 
-    handle_new_partner_events_request(starts_at, ends_at)
+    # TODO:
+    # For sake of speed/availability, we will return to user immediately what
+    # we have at this moment in the storage, while the latest data update
+    # processed in handle_new_partner_events_request() in background task,
+    # so the updated data will be available on the next user request.
 
-    # for sake of speed/availability, we can return to user immediately what
-    # we have at this moment in the storage, so the updated data will be
-    # available on the next user request.
+    await handle_new_partner_events_request(starts_at, ends_at)
+
     events_list = storage.get_events(starts_at, ends_at)
     return {
         "data": {

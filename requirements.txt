@@ -1,5 +1,6 @@
 fastapi==0.108.0
 fastapi-code-generator==0.4.4
+httpx==0.26.0
 lxml==5.1.0
 lxml-stubs==0.5.1
 pytest==7.4.4

@@ -54,3 +54,6 @@ class EventStorage:
             "start": event.start,
             "end": event.end,
         })
+
+
+storage = EventStorage()
