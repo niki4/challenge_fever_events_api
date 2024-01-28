@@ -14,7 +14,7 @@ from app.models import PartnerEvent
 
 class EventStorage:
     def __init__(self, storage_engine=None):
-        self.storage = storage_engine or {}
+        self._storage = storage_engine or {}
 
     def get_events(self,
                    start_from: datetime,
@@ -24,11 +24,11 @@ class EventStorage:
         """
         result = []
 
-        for event in self.storage.values():
+        for event in self._storage.values():
             if start_from <= event["start"] and event["end"] <= ends_to:
                 result.append({
                     k: v for (k, v) in event.items() if k not in ["start, end"]
-                    })
+                })
 
         logger.debug("EventStorage - get_events - result: %s", result)
         return result
@@ -37,14 +37,14 @@ class EventStorage:
         """Updates event in storage. Creates new record if need."""
 
         event_key = (event.base_event_id, event.id)
-        if event_key not in self.storage:
-            self.storage[event_key] = {
+        if event_key not in self._storage:
+            self._storage[event_key] = {
                 "id": str(uuid.uuid4()),
                 "title": event.title,
             }
 
         # Update event with latest known values
-        self.storage[event_key].update({
+        self._storage[event_key].update({
             "start_date": str(event.start.date()),  # faster than .strftime
             "start_time": str(event.start.time()),
             "end_date": str(event.end.date()),

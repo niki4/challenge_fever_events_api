@@ -54,7 +54,9 @@ async def validation_exception_handler(
 async def generic_exception_handler(
         request: Request, exc: Exception) -> SearchGetResponse2:
     """Overrides default generic handler for Server Errors and returns
-    request validation error in custom JSON format."""
+    request validation error in custom JSON format.
+    """
+
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=jsonable_encoder({
@@ -131,6 +133,7 @@ async def search_events(
     background_tasks: BackgroundTasks = BackgroundTasks()
 ) -> Union[SearchGetResponse, SearchGetResponse1, SearchGetResponse2]:
     """Lists the available events on a specified time range."""
+
     if not starts_at or not ends_at:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
