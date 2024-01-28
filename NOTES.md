@@ -109,7 +109,7 @@ Neverthless, some design decisions allowed to reach good response time while dec
 
 * First, for prototype I used very simple in-memory storage that holds previously fetched events data.
 * Then, for Partner API calls I used async/await pattern so that server do not blocks here and may switch to other requests/tasks while waiting response.
-* Finally, `handle_new_partner_events_request` (which requests partner event data from external API, parses XML and then stores result data) processed asynchronously in background task, allowing us return response to user with very low latency, however, by cost of eventual consistency (the updated data will be available on the next user request).
+* Finally, `handle_new_events_request` (which requests partner event data from external API, parses XML and then stores result data) processed asynchronously in background task, allowing us return response to user with very low latency, however, by cost of eventual consistency (the updated data will be available on the next user request).
 
 Request response time metrics I have on my environment (call to `/search` handler):
 
