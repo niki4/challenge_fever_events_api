@@ -1,9 +1,15 @@
 ## Setup & run
 
+### Local env
 `make install` - one off command to install the app env and dependencies.
 `make run` - run the app (debug logging off).
 `make debug` - run the app with debug logging on.
 `make clean` - removes all the temporary files, virtual env, etc.
+
+### Docker container
+
+Simply run `docker-compose up --build` and then navigate to app in your web-browser, e.g.
+`http://localhost:8000/search?starts_at=2020-05-01T17:32:28Z&ends_at=2023-07-21T17:32:28Z`
 
 ## Tech stack
 
