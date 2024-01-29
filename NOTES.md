@@ -4,7 +4,7 @@
 `make install` - one off command to install the app env and dependencies.
 `make run` - run the app (debug logging off).
 `make debug` - run the app with debug logging on.
-`make clean` - removes all the temporary files, virtual env, etc.
+`make clean-all` - removes all the temporary files, virtual env, etc.
 
 ### Docker container
 

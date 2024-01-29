@@ -19,3 +19,4 @@ test:
 
 clean-all:
 	rm -rf .venv
+	rm -rf .pytest_cache
