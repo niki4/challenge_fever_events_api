@@ -73,4 +73,5 @@ class PartnerEventsController:
                 if event is not None:
                     storage.set_event(event)
 
-            logger.info("New events saved in storage.")
+            logger.info("Partner events saved in storage. "
+                        "They will be available on the next request.")
