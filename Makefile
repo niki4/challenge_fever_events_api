@@ -14,6 +14,7 @@ debug:
 
 test:
 	. .venv/bin/activate && \
+	export PYTHONPATH=${PWD} && \
 	pytest . -v
 
 clean-all:

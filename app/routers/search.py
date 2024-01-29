@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse
 from app.models import SearchGetResponse
 from app.models import SearchGetResponse1, SearchGetResponse2
 from app.controllers.search import PartnerEventsController
-from app.core.storage import storage
+from app.core.storage import local_event_storage as storage
 
 router = APIRouter()
 
@@ -51,8 +51,9 @@ async def search_events(
     # More info: https://fastapi.tiangolo.com/tutorial/background-tasks/
 
     partner_controller = PartnerEventsController()
+
     background_tasks.add_task(partner_controller.handle_new_events_request,
-                              starts_at, ends_at)
+                              starts_at, ends_at, storage)
 
     events_list = storage.get_events(starts_at, ends_at)
     return {

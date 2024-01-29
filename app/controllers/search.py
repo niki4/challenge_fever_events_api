@@ -8,7 +8,7 @@ from lxml import etree
 from app.core import parsers
 from app.core import settings
 from app.core.logger import logger
-from app.core.storage import storage
+from app.core.storage import BaseStorage
 from app.models import PartnerEvent
 
 
@@ -39,7 +39,8 @@ class PartnerEventsController:
             return response.content
 
     async def handle_new_events_request(self, starts_from: datetime,
-                                        ends_to: datetime):
+                                        ends_to: datetime,
+                                        storage: BaseStorage):
         """Handles request, parse and then store partner event data."""
 
         response_content = await self.fetch_events_from_partner_api()
@@ -67,7 +68,9 @@ class PartnerEventsController:
 
         # then store events in the storage
         if partner_events_data:
+
             for event in partner_events_data:
                 if event is not None:
                     storage.set_event(event)
+
             logger.info("New events saved in storage.")
